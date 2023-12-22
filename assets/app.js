@@ -14,11 +14,11 @@ function GUI() {
 }
 
 function updateControlPanel() {
-    tr = $('#antsTableRow');
+    let tr = $('#antsTableRow');
     tr.find('td').each(function() {
-        name = $(this).attr('data-name');
-        cost = $(this).attr('data-cost');
-        disabled = $(this).attr('data-disabled');
+        let name = $(this).attr('data-name');
+        let cost = $(this).attr('data-cost');
+        let disabled = $(this).attr('data-disabled');
         if (disabled == 1 && gui.get_food() >= cost) {
             $(this).attr("data-disabled", 0).removeClass("ant-inactive");
         }
@@ -28,9 +28,9 @@ function updateControlPanel() {
     });
 }
 function drawControlPanel(food, places, ants) {
-    tr = $('#antsTableRow');
+    let tr = $('#antsTableRow');
     for (var id in ants) {
-        ant = ants[id];
+        let ant = ants[id];
         if (ant["cost"] > food)
             tr.append('<td data-disabled="1" data-cost="' + ant["cost"] + '" data-img="' + ant["img"] + '" data-name="' + ant["name"] + '" id="ant_' + ant["name"]  + '" class="ant-row ant-inactive"><img class="ant-img" src="' + ant["img"] + '"> ' + ant["name"] + '<hr class="ant-row-divider" /><span class="badge ant-cost">' + ant["cost"] + '</span></td>');
         else
@@ -41,35 +41,32 @@ function drawControlPanel(food, places, ants) {
 }
 
 function drawInitialPlaces() {
-    pTable = $('.places-table');
-    rows = gui.get_rows();
-    places = gui.get_places();
-    i = 0;
-    tr = null;
-    while (i <= rows) {
+    let pTable = $('.places-table');
+    let rows = gui.get_rows();
+    let places = gui.get_newPlaces();
+    let i = 0;
+    let tr = null;
+    while (i < rows) {
         pTable.append('<tr id="pRow' + i + '"></tr>');
         tr = pTable.find('#pRow' + i);
         for (col in places[i]) {
-            random_sky = Math.floor(Math.random() * 3) + 1;
-            random_ground = Math.floor(Math.random() * 3) + 1;
+            let random_sky = Math.floor(Math.random() * 3) + 1;
+            let random_ground = Math.floor(Math.random() * 3) + 1;
             if (places[i][col]["water"] == 1) {
                 random_ground = "water";
             }
             tr.append('<td data-row="' + i  + '" data-col="' + col  + '" data-name="' + places[i][col]["name"]  + '" class="places-td" id="pCol' + col + '"><div class="tunnel-div"><div class="tunnel-img-container"></div><div style="background-image: url(\'assets/tiles/sky/' + random_sky + '.png\')"class="tunnel-goc-div"></div><div style="background-image: url(\'assets/tiles/ground/' + random_ground + '.png\')" class="tunnel-goc-div"></div></div></td>');
         }
-        if (i == 0) {
-            rowspan = rows + 1
-            tr.append('<td id="beehive-td" rowspan="' + rowspan + '" class="place-beehive-td"></td>')
-            td = tr.find('.place-beehive-td');
-            for (bee in places["Hive"]["insects"]) {
-                td.append('<img data-id="' + bee  + '" class="bee-img" src="assets/insects/bee.gif">');
-            }
-            pTable.find('.place-beehive-td').html()
-        }
         i += 1;
     }
-}
 
+    let hiveContainer = $('.hive-container');
+    hiveContainer.append('<div id="beehive" class="beehive"></div>')
+    let hive = hiveContainer.find('.beehive');
+    for (bee in places["Hive"]["insects"]) {
+        hive.append(make_img_tag("assets/insects/bee.gif", {'data-id': bee, 'class': "bee-img"}));
+    }
+}
 
 function updateFoodCount() {
     $('#foodCount').html(gui.get_food());
@@ -79,7 +76,7 @@ function startGame() {
     gui = new GUI();
     gui.startGame();
     gui.get_gameState(false);
-    drawControlPanel(gui.get_food(), gui.get_places(), gui.get_antTypes());
+    drawControlPanel(gui.get_food(), gui.get_newPlaces(), gui.get_antTypes());
     gui.strategyTime = gui.get_strategyTime();
     gui.interval = setInterval(gui.update.bind(gui), 500);
 }
@@ -95,7 +92,7 @@ GUI.prototype.get_localGameState = function() {
     return this.newState;
 }
 GUI.prototype.get_gameState = function() {
-    t = this;
+    let t = this;
     $.ajax({
       type: 'POST',
       url: 'ajax/fetch/state',
@@ -136,8 +133,12 @@ GUI.prototype.get_antTypes = function() {
     return this.newState["ant_types"];
 }
 
-GUI.prototype.get_places = function() {
+GUI.prototype.get_newPlaces = function() {
     return this.newState["places"];
+}
+
+GUI.prototype.get_oldPlaces = function () {
+    return this.oldState["places"];
 }
 
 GUI.prototype.get_food = function() {
@@ -185,6 +186,7 @@ GUI.prototype.get_deadinsects = function() {
 }
 GUI.prototype.clearBoard = function(){
   $(".places-table > tbody").empty();
+  $(".hive-container").empty();
 }
 GUI.prototype.clearAntTypes = function(){
   $("#antsTableRow").empty();
@@ -197,20 +199,15 @@ GUI.prototype.restartGame = function(){
 }
 
 $('#antsTableRow').on('click', ".ant-row", function() {
-    if ($(this).attr('data-disabled') == 1) {
-        swal({
-            title: "Cannot Select " + $(this).attr('data-name') + " Ant",
-            text: "You do not have enough food.",
-            type: "error",
-        });
-        return false;
-    }
-    currentSelected = gui.get_selectedAnt();
+    let currentSelected = gui.get_selectedAnt();
     if (currentSelected) {
         $('#antsTableRow').find("[data-name = '" + currentSelected["name"] + "']").removeClass("ant-selected");
+        gui.deselectAnt()
     }
-    $(this).addClass('ant-selected');
-    gui.selectAnt($(this).attr('data-name'), $(this).attr('data-img'));
+    if (!currentSelected || currentSelected["name"] != $(this).attr('data-name')) {
+        $(this).addClass('ant-selected');
+        gui.selectAnt($(this).attr('data-name'), $(this).attr('data-img'));
+    }
 });
 
 
@@ -238,10 +235,8 @@ $('#exitBtn').on('click', function() {
 
 $('.places-table').on('click', '.places-td', function() {
     //Check to see if an insect is selected
-    t = this
-    selectedAnt = gui.get_selectedAnt();
-    //Deselect ant
-    gui.deselectAnt();
+    let t = this
+    let selectedAnt = gui.get_selectedAnt();
     if (!selectedAnt) {
         swal({
             title: "Error",
@@ -271,8 +266,8 @@ $('.places-table').on('click', '.places-td', function() {
             }
             else {
                 //$(t).find('.tunnel-img-container').html('<img data-id="' + response["id"]  +'" class="active-ant" src="' + selectedAnt["img"]  + '">');
-                r = $(t).attr("data-row");
-                c = $(t).attr("data-col");
+                let r = $(t).attr("data-row");
+                let c = $(t).attr("data-col");
                 if (!gui.locToAnt[r]) gui.locToAnt[r] = [];
                 if(!gui.locToAnt[r][c]){
                   gui.locToAnt[r][c] = [response["id"]];
@@ -286,24 +281,31 @@ $('.places-table').on('click', '.places-td', function() {
 });
 
 GUI.prototype.moveBees = function() {
-    newLocation = this.get_beeLocations();
-    oldLocation = this.get_oldBeeLocations();
-    for (bee in oldLocation) {
-        if (oldLocation[bee] != newLocation[bee]) {
-            loc = $('.places-table').find('td[data-name="' + newLocation[bee]  + '"]');
-            img = $('.bee-img[data-id="' + bee  + '"]');
-            if (img.css("position") != "absolute") {
-                $('.place-beehive-td').css({width: $('.place-beehive-td').width()});
-                currentLocTop = img.position().top;
-                currentLocLeft = img.position().left;
-                img.css({"margin-top": "40px", "top": currentLocTop, "left": currentLocLeft, "position": "absolute"});
-            }
-            position = loc.position();
-            img.animate(position, 1000);
+    let newLocation = this.get_beeLocations();
+    let oldLocation = this.get_oldBeeLocations();
+    let locNameToNumBees = {};
+    for (let bee in newLocation) {
+        let locName = newLocation[bee]
+        let loc = $('.places-table').find('td[data-name="' + locName + '"]');
+        let img = $('.bee-img[data-id="' + bee  + '"]');
+        // To allow for bee overlap, we offset adjacent bees
+        if (!locNameToNumBees.hasOwnProperty(locName)) {
+            locNameToNumBees[locName] = 0
         }
+        let numBees = locNameToNumBees[locName];
+        let newPosition = {
+            "left": 5 + 5 * numBees,
+            "top": 25 + 5 * numBees,
+            "position": "absolute",
+        }
+        locNameToNumBees[locName]++
+        if (oldLocation[bee] != locName) { // If no change
+            loc.find('.tunnel-img-container').append(img)
+        }
+        img.css(newPosition)
     }
-    db = this.get_deadbees();
-    for (b in db) {
+    let db = this.get_deadbees();
+    for (let b in db) {
         if ($.inArray(db[b], this.deadbees) == -1) {
             //We have some bee killing to do
             $('.bee-img[data-id="' + db[b] + '"]').hide("explode", {pieces: 16}, 1000);
@@ -312,18 +314,36 @@ GUI.prototype.moveBees = function() {
     }
 }
 
-GUI.prototype.removeAnts = function() {
-    di = this.get_deadinsects();
-    for (a in di) {
+GUI.prototype.updateAnts = function() {
+    let oldPlaces = this.get_oldPlaces();
+    let newPlaces = this.get_newPlaces();
+    for (let r in newPlaces) {
+        if (r == "Hive") {
+            continue;
+        }
+        for (let c in newPlaces[r]) {
+            let oldAnt = oldPlaces[r][c]["insects"]
+            let newAnt = newPlaces[r][c]["insects"]
+            if (newAnt.hasOwnProperty("type") && (!oldAnt.hasOwnProperty("id") || oldAnt.id != newAnt.id)) {
+              let antImgTag =  make_img_tag(newAnt["img"],{"data-id":gui.locToAnt[r][c][0], "class":"active-ant", "container":newAnt["container"]})
+              if(newAnt["container"] && newAnt["contains"]){
+                antImgTag = make_img_tag(newPlaces[r][c]["insects"]["contains"]["img"], {"class":"contained-ant"}) + antImgTag;
+              }
+              $('.places-table').find('.places-td[data-row="' + r  + '"][data-col="' + c  + '"]').find('.tunnel-img-container').append(antImgTag);
+            }
+        }
+    }
+    let di = this.get_deadinsects();
+    for (let a in di) {
         if ($.inArray(a, this.deadinsects) == -1) {
             //We have some ant killing to do lol -CS
 
-            img = $('.places-table').find('.active-ant[data-id="' + di[a] + '"]')
+            let img = $('.places-table').find('.active-ant[data-id="' + di[a] + '"]')
             img.hide("explode", {pieces: 16}, 1000);
             if(img[0]){
-              td = img[0].closest("td");
-              r = $(td).attr("data-row");
-              c = $(td).attr("data-col");
+              let td = img[0].closest("td");
+              let r = $(td).attr("data-row");
+              let c = $(td).attr("data-col");
               gui.locToAnt[r][c].shift();
             }
             this.deadinsects.push(di[a]);
@@ -361,41 +381,25 @@ GUI.prototype.update = function() {
     this.updateTime();
     updateFoodCount();
     this.moveBees();
-    this.removeAnts();
-    places = this.get_places();
-    for (r in places) {
-        if (r == "Hive") {
-            continue;
-        }
-        for (c in places[r]) {
-            if ("type" in places[r][c]["insects"]) {
-              ant = places[r][c]["insects"];
-              antImgTag =  make_img_tag(ant["img"],{"data-id":gui.locToAnt[r][c][0], "class":"active-ant", "container":ant["container"]})
-              if(ant["container"] && ant["contains"]){
-                antImgTag = make_img_tag(places[r][c]["insects"]["contains"]["img"], {"class":"contained-ant"}) + antImgTag;
-              }
-              $('.places-table').find('.places-td[data-row="' + r  + '"][data-col="' + c  + '"]').find('.tunnel-img-container').html(antImgTag);
-            }
-        }
-    }
+    this.updateAnts();
 }
 
 GUI.prototype.fireOff = function(){
-  beeLocations = this.get_beeLocations();
-  beeGrid = []
-  places = this.oldState.places;
-  height = keys(places).length - 1;
-  width = keys(places['0'].length);
-  ants = [];
-  for(var i = 0; i < height; ++i){
+  let beeLocations = this.get_beeLocations();
+  let beeGrid = []
+  let places = this.oldState.places;
+  let height = keys(places).length - 1;
+  let width = keys(places['0'].length);
+  let ants = [];
+  for(let i = 0; i < height; ++i){
     beeGrid.push(new Array(width));
   }
-  for(var i = 0; i < beeLocations.length; ++i){
+  for(let i = 0; i < beeLocations.length; ++i){
     location = beeLocations[i].split('_');
     beeGrid[ location[1] ][ location[2] ] = true;
   }
-  for(var i = 0; i < height; ++i){
-    for(var j = 0; j < width; ++j){
+  for(let i = 0; i < height; ++i){
+    for(let j = 0; j < width; ++j){
       ants = location[i+""][j+""]["insects"];
     }
   }
@@ -408,8 +412,8 @@ function shoot_from(a, b){
 
 //utils.js
 function make_img_tag(src, attributes){
-  tag = "<img src = '" + src + "'";
+  tag = "<div ";
   for(var attr in attributes) tag += ' ' + attr + " = " + attributes[attr];
-  tag += ">"
+  tag += "><img src = '" + src + "'></div>"
   return tag
 }

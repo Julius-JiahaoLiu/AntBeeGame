@@ -1,49 +1,41 @@
 test = {
   'name': 'Problem 11',
-  'points': 1,
+  'points': 2,
   'suites': [
     {
       'cases': [
         {
-          'answer': '9bc4c1f8c64f8980fa7a81c950465b76',
+          'answer': "It is waterproof, so its health won't be reduced to 0 when it is placed in a Water Place",
           'choices': [
             r"""
-            If the insect is not watersafe, its armor is reduced to 0.
-            Otherwise, nothing happens.
+            It is waterproof, so its health won't be reduced to 0 when it is
+            placed in a Water Place
             """,
-            "The insect's armor is reduced to 0.",
-            'Nothing happens.',
-            'The insect goes for a swim.'
+            r"""
+            It is not waterproof, so its health will be reduced to 0 when it is
+            placed in a Water Place
+            """,
+            'It throws water pellets instead of leaves'
           ],
           'hidden': False,
-          'locked': True,
-          'question': 'What happens when an insect is added to a Water Place?'
+          'locked': False,
+          'multiline': False,
+          'question': 'How is a ScubaThrower different from a regular ThrowerAnt?'
         },
         {
-          'answer': '2e6b10035e4097a1b15121e4b5b75e12',
+          'answer': 'name, is_waterproof, food_cost',
           'choices': [
-            'class, all ants of a subclass should either be watersafe or not',
-            'class, all ants should be watersafe',
-            'instance, the is_watersafe attribute depends on the amount of armor a given ant has left',
-            'instance, the is_watersafe attribute depends on the given place of an ant'
+            'name, is_waterproof, food_cost',
+            'food_cost, action, damage',
+            'is_waterproof, action',
+            'name, nearest_bee, is_waterproof'
           ],
           'hidden': False,
-          'locked': True,
-          'question': 'What type of attribute should "is_watersafe" be?'
-        },
-        {
-          'answer': '127cd87858e6c0a9f29f199fb2e2be0a',
-          'choices': [
-            'reduce_armor, in the Insect class',
-            'remove_insect, in the Place class',
-            'sting, in the Bee class',
-            'remove_ant, in the GameState class'
-          ],
-          'hidden': False,
-          'locked': True,
+          'locked': False,
+          'multiline': False,
           'question': r"""
-          What method deals damage to an Insect and removes it from its place
-          if its armor reaches 0?
+          Which inherited attributes and/or methods should ScubaThrower
+          override?
           """
         }
       ],
@@ -54,77 +46,97 @@ test = {
       'cases': [
         {
           'code': r"""
-          >>> # Testing water with Ants
-          >>> test_water = Water('Water Test1')
-          >>> ant = HarvesterAnt()
-          >>> test_water.add_insect(ant)
-          >>> (ant.armor, test_water.ant is None)
-          (0, True)
-          >>> ant = Ant()
-          >>> test_water.add_insect(ant)
-          >>> (ant.armor, test_water.ant is None)
-          (0, True)
-          >>> ant = ThrowerAnt()
-          >>> test_water.add_insect(ant)
-          >>> (ant.armor, test_water.ant is None)
-          (0, True)
-          """,
-          'hidden': False,
-          'locked': False
-        },
-        {
-          'code': r"""
-          >>> # Testing water with soggy (non-watersafe) bees
-          >>> test_bee = Bee(1000000)
-          >>> test_bee.is_watersafe = False    # Make Bee non-watersafe
-          >>> test_water = Water('Water Test2')
-          >>> test_water.add_insect(test_bee)
-          >>> test_bee.armor
-          0
-          >>> test_water.bees
-          []
-          """,
-          'hidden': False,
-          'locked': False
-        },
-        {
-          'code': r"""
-          >>> # Testing water with watersafe bees
-          >>> test_bee = Bee(1)
-          >>> test_water = Water('Water Test3')
-          >>> test_water.add_insect(test_bee)
-          >>> test_bee.armor
+          >>> # Testing ScubaThrower parameters
+          >>> scuba = ScubaThrower()
+          >>> ScubaThrower.food_cost
+          6
+          >>> scuba.health
           1
-          >>> test_water.bees == [test_bee]
-          True
           """,
           'hidden': False,
-          'locked': False
+          'locked': False,
+          'multiline': False
+        }
+      ],
+      'scored': False,
+      'setup': r"""
+      >>> from ants import *
+      """,
+      'teardown': '',
+      'type': 'doctest'
+    },
+    {
+      'cases': [
+        {
+          'code': r"""
+          >>> # Testing if ScubaThrower is waterproof
+          >>> water = Water('Water')
+          >>> ant = ScubaThrower()
+          >>> water.add_insect(ant)
+          >>> ant.place is water
+          True
+          >>> ant.health
+          1
+          """,
+          'hidden': False,
+          'locked': False,
+          'multiline': False
         },
         {
           'code': r"""
-          >>> # test proper call to death callback
-          >>> original_death_callback = Insect.death_callback
-          >>> Insect.death_callback = lambda x: print("insect died")
-          >>> place = Water('Water Test4')
-          >>> soggy_bee = Bee(1)
-          >>> soggy_bee.is_watersafe = False
-          >>> place.add_insect(soggy_bee)
-          insect died
-          >>> place.add_insect(Bee(1))
-          >>> place.add_insect(ThrowerAnt())
-          insect died
-          >>> Insect.death_callback = original_death_callback
+          >>> # Testing that ThrowerAnt is not waterproof
+          >>> water = Water('Water')
+          >>> ant = ThrowerAnt()
+          >>> water.add_insect(ant)
+          >>> ant.place is water
+          False
+          >>> ant.health
+          0
           """,
           'hidden': False,
-          'locked': False
+          'locked': False,
+          'multiline': False
+        },
+        {
+          'code': r"""
+          >>> # Testing ScubaThrower on land
+          >>> place1 = gamestate.places["tunnel_0_0"]
+          >>> place2 = gamestate.places["tunnel_0_4"]
+          >>> ant = ScubaThrower()
+          >>> bee = Bee(3)
+          >>> place1.add_insect(ant)
+          >>> place2.add_insect(bee)
+          >>> ant.action(gamestate)
+          >>> bee.health  # ScubaThrower can throw on land
+          2
+          """,
+          'hidden': False,
+          'locked': False,
+          'multiline': False
+        },
+        {
+          'code': r"""
+          >>> # Testing ScubaThrower in the water
+          >>> water = Water("water")
+          >>> water.entrance = gamestate.places["tunnel_0_1"]
+          >>> target = gamestate.places["tunnel_0_4"]
+          >>> ant = ScubaThrower()
+          >>> bee = Bee(3)
+          >>> water.add_insect(ant)
+          >>> target.add_insect(bee)
+          >>> ant.action(gamestate)
+          >>> bee.health  # ScubaThrower can throw in water
+          2
+          """,
+          'hidden': False,
+          'locked': False,
+          'multiline': False
         }
       ],
       'scored': True,
       'setup': r"""
       >>> from ants import *
-      >>> from ants_plans import *
-      >>> beehive, layout = Hive(make_test_assault_plan()), dry_layout
+      >>> beehive, layout = Hive(AssaultPlan()), dry_layout
       >>> dimensions = (1, 9)
       >>> gamestate = GameState(None, beehive, ant_types(), layout, dimensions)
       >>> #
@@ -136,34 +148,63 @@ test = {
       'cases': [
         {
           'code': r"""
-          >>> # Testing water inheritance
-          >>> old_add_insect = Place.add_insect
-          >>> def new_add_insect(self, insect):
-          ...     print("called add_insect")
-          ...     old_add_insect(self, insect)
-          >>> Place.add_insect = new_add_insect
-          >>> test_bee = Bee(1)
-          >>> test_water = Water('Water Test4')
-          >>> test_water.add_insect(test_bee) # if this fails you probably didn't call `add_insect`
-          called add_insect
-          >>> Place.add_insect = old_add_insect
+          >>> # Testing ScubaThrower Inheritance from ThrowerAnt
+          >>> def new_action(self, gamestate):
+          ...     raise NotImplementedError()
+          >>> def new_throw_at(self, target):
+          ...     raise NotImplementedError()
+          >>> ThrowerAnt.action = new_action
+          >>> test_scuba = ScubaThrower()
+          >>> try:
+          ...     test_scuba.action(gamestate)
+          ... except NotImplementedError:
+          ...     print('inherits action!')
+          inherits action!
+          >>> ThrowerAnt.action = old_thrower_action
+          >>> ThrowerAnt.throw_at = new_throw_at
+          >>> test_scuba = ScubaThrower()
+          >>> try:
+          ...     test_scuba.throw_at(Bee(1))
+          ... except NotImplementedError:
+          ...     print('inherits throw_at!')
+          inherits throw_at!
           """,
           'hidden': False,
-          'locked': False
+          'locked': False,
+          'multiline': False
         }
       ],
       'scored': True,
       'setup': r"""
       >>> from ants import *
-      >>> from ants_plans import *
-      >>> beehive, layout = Hive(make_test_assault_plan()), dry_layout
+      >>> beehive, layout = Hive(AssaultPlan()), dry_layout
       >>> dimensions = (1, 9)
       >>> gamestate = GameState(None, beehive, ant_types(), layout, dimensions)
-      >>> old_add_insect = Place.add_insect
+      >>> old_thrower_action = ThrowerAnt.action
+      >>> old_throw_at = ThrowerAnt.throw_at
       """,
       'teardown': r"""
-      >>> Place.add_insect = old_add_insect
+      >>> ThrowerAnt.action = old_thrower_action
+      >>> ThrowerAnt.throw_at = old_throw_at
       """,
+      'type': 'doctest'
+    },
+    {
+      'cases': [
+        {
+          'code': r"""
+          >>> from ants import *
+          >>> ScubaThrower.implemented
+          True
+          """,
+          'hidden': False,
+          'locked': False,
+          'multiline': False
+        }
+      ],
+      'scored': True,
+      'setup': '',
+      'teardown': '',
       'type': 'doctest'
     }
   ]

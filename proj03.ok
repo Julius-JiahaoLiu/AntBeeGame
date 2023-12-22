@@ -1,14 +1,11 @@
 {
     "name": "Project 3: Ants Vs. SomeBees",
-    "endpoint": "cal/cs61a/su20/proj03",
+    "endpoint": "cal/cs61a/fa23/proj03",
     "src": [
         "ants.py"
     ],
     "tests": {
-        "tests/0[0-9].py": "ok_test",
-        "tests/1[0-3].py": "ok_test",
-        "tests/EC.py": "ok_test",
-        "tests/OPTIONAL.py": "ok_test"
+        "tests/*.py": "ok_test"
     },
     "default_tests": [
         "00",
@@ -19,13 +16,13 @@
         "05",
         "06",
         "07",
-        "08",
+        "08a",
+        "08b",
+        "08c",
         "09",
         "10",
         "11",
-        "12",
-        "13",
-        "EC"
+        "12"
     ],
     "protocols": [
         "restore",
